@@ -2,7 +2,8 @@ import PySimpleGUI as sg
 import paho.mqtt.client as mqtt
 import random
 
-def connect_mqtt(client, user,pw):
+
+def connect_mqtt(client, user, pw):
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
@@ -14,7 +15,8 @@ def connect_mqtt(client, user,pw):
     client.connect("10.30.10.31", 1883)
     return client
 
-def subscribe(client: mqtt,topic):
+
+def subscribe(client: mqtt, topic):
     def on_message(client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
         #global mail
@@ -23,14 +25,14 @@ def subscribe(client: mqtt,topic):
         if(msg.payload.decode().startswith(user) == False):
             global window
             global chat_box
-            chat_box += msg.payload.decode() + "\n" 
+            chat_box += msg.payload.decode() + "\n"
             window['textbox'].Update(chat_box)
             window['msg'].Update('')
     client.subscribe(topic)
     client.on_message = on_message
 
 
-def publish(client,topic,user,msg):
+def publish(client, topic, user, msg):
     fmsg = user + ": " + msg
     result = client.publish(topic, fmsg, qos=1)
     status = result[0]
@@ -40,15 +42,17 @@ def publish(client,topic,user,msg):
         print(f"Failed to send message to topic {topic}")
     return fmsg
 
-def will_set(client,topic,user):
+
+def will_set(client, topic, user):
     topic = topic + "/dc"
     client.will_set(topic, user +
-                            " Gone Offline", qos=1, retain=False) 
+                    " Gone Offline", qos=1, retain=False)
 
-def publish_connection(client,topic,user):
+
+def publish_connection(client, topic, user):
     fmsg = user + " Connected"
     client.publish(topic, fmsg, qos=1)
-                            #last will fix to do
+    # last will fix to do
 ###########################
 
 # def check_mail():
@@ -61,15 +65,18 @@ def publish_connection(client,topic,user):
 #         flag = 1
 #         mail = ""
 #     return (flag,temp)
-    
 
-sg.theme('SystemDefaultForReal')   
-layout = [  [sg.InputText(default_text='username',size=(31,1)),sg.InputText(default_text='passwordddddddddddddd',size=(30,1),password_char='*')],
-            [sg.Text('Topic/chat room'), sg.InputText(size=(47,1)),sg.Button('Connect')],
-            [sg.Multiline(size=(70, 27), key='textbox',autoscroll=True,disabled=True)],
-            [sg.InputText(size=(66,1),key='msg'),sg.Button('Send',bind_return_key=True)],
-            [sg.Button('Close Window')]]  
-window = sg.Window('Client chat', layout, size=(540,600)).Finalize()
+
+sg.theme('SystemDefaultForReal')
+layout = [[sg.InputText(default_text='username', size=(31, 1)), sg.InputText(default_text='passwordddddddddddddd', size=(30, 1), password_char='*')],
+          [sg.Text('Topic/chat room'), sg.InputText(size=(47, 1)),
+           sg.Button('Connect')],
+          [sg.Multiline(size=(70, 27), key='textbox',
+                        autoscroll=True, disabled=True)],
+          [sg.InputText(size=(66, 1), key='msg'), sg.Button(
+              'Send', bind_return_key=True)],
+          [sg.Button('Close Window')]]
+window = sg.Window('Client chat', layout, size=(540, 600)).Finalize()
 
 user = ""
 pw = ""
@@ -81,8 +88,8 @@ mail = ""
 while True:
     event, values = window.read()
     if event == sg.WIN_CLOSED:
-            break
-    if event in (None, 'Close Window'): 
+        break
+    if event in (None, 'Close Window'):
         break
     if event == 'Connect':
         user = values[0]
@@ -90,34 +97,35 @@ while True:
         topic = values[2]
 
         client_id = f'python-mqtt-{random.randint(0, 100)}'
-        client = mqtt.Client(client_id,clean_session=True,protocol=mqtt.MQTTv31)
+        client = mqtt.Client(client_id, clean_session=True,
+                             protocol=mqtt.MQTTv31)
 
-        will_set(client,topic,user)
-        client = connect_mqtt(client,user,pw)
-        subscribe(client,topic)
-        subscribe(client,topic+"/dc")
+        will_set(client, topic, user)
+        client = connect_mqtt(client, user, pw)
+        subscribe(client, topic)
+        subscribe(client, topic+"/dc")
         client.loop_start()
-        publish_connection(client,topic,user)
+        publish_connection(client, topic, user)
 
     event, values = window.read(timeout=1)
-    chat_box = "Connected to room " + topic +"\n"
+    chat_box = "Connected to room " + topic + "\n"
     window['textbox'].Update(chat_box)
     event, values = window.read(timeout=1)
 
     while(True):
-        event, values = window.read(timeout=1)# ? timeout treba ili ne 
+        event, values = window.read(timeout=1)  # ? timeout treba ili ne
         if event == sg.WIN_CLOSED:
             client.loop_stop()
             break
         if event == 'Send':
-            fmsg = publish(client,topic,user,values['msg'])
-            chat_box += fmsg + "\n" 
+            fmsg = publish(client, topic, user, values['msg'])
+            chat_box += fmsg + "\n"
             window['textbox'].Update(chat_box)
             window['msg'].Update('')
 
         # flag,rec = check_mail()
         # if(flag):
-        #     chat_box += fmsg + "\n" 
+        #     chat_box += fmsg + "\n"
         #     window['textbox'].Update(chat_box)
         #     window['msg'].Update('')
 

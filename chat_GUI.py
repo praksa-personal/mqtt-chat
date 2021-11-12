@@ -1,6 +1,5 @@
 import PySimpleGUI as sg
 import paho.mqtt.client as mqtt
-import time
 import random
 
 def connect_mqtt(client, user,pw):
@@ -12,7 +11,7 @@ def connect_mqtt(client, user,pw):
     # Set Connecting Client ID
     client.username_pw_set(user, pw)
     client.on_connect = on_connect
-    client.connect("localhost", 1883)
+    client.connect("10.30.10.31", 1883)
     return client
 
 def subscribe(client: mqtt,topic):
@@ -71,8 +70,6 @@ layout = [  [sg.InputText(default_text='username',size=(31,1)),sg.InputText(defa
             [sg.InputText(size=(66,1),key='msg'),sg.Button('Send',bind_return_key=True)],
             [sg.Button('Close Window')]]  
 window = sg.Window('Client chat', layout, size=(540,600)).Finalize()
-window.Element('textbox').bind("<FocusIn>", '+FOCUS_IN+')
-window.Element('textbox').bind("<FocusOut>", '+FOCUS_OUT+')
 
 user = ""
 pw = ""

@@ -3,15 +3,13 @@ import paho.mqtt.client as mqtt
 import time
 import random
 
-def connect_mqtt(user,pw):
+def connect_mqtt(client, user,pw):
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
         else:
             print("Failed to connect, return code %d\n", rc)
     # Set Connecting Client ID
-    client_id = f'python-mqtt-{random.randint(0, 100)}'
-    client = mqtt.Client(client_id,clean_session=True,protocol=mqtt.MQTTv31)
     client.username_pw_set(user, pw)
     client.on_connect = on_connect
     client.connect("localhost", 1883)
@@ -44,9 +42,13 @@ def publish(client,topic,user,msg):
     return fmsg
 
 def will_set(client,topic,user):
-    client.will_set(topic + "/dc", user +
+    topic = topic + "/dc"
+    client.will_set(topic, user +
                             " Gone Offline", qos=1, retain=False) 
 
+def publish_connection(client,topic,user):
+    fmsg = user + " Connected"
+    client.publish(topic, fmsg, qos=1)
                             #last will fix to do
 ###########################
 
@@ -89,10 +91,16 @@ while True:
         user = values[0]
         pw = values[1]
         topic = values[2]
-        client = connect_mqtt(user,pw)
+
+        client_id = f'python-mqtt-{random.randint(0, 100)}'
+        client = mqtt.Client(client_id,clean_session=True,protocol=mqtt.MQTTv31)
+
         will_set(client,topic,user)
+        client = connect_mqtt(client,user,pw)
         subscribe(client,topic)
+        subscribe(client,topic+"/dc")
         client.loop_start()
+        publish_connection(client,topic,user)
 
     event, values = window.read(timeout=1)
     chat_box = "Connected to room " + topic +"\n"
